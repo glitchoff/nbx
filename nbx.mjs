@@ -340,12 +340,22 @@ function highlight(code, lang) {
 // Notebook execution via jupyter nbconvert (into a temp copy)
 // ---------------------------------------------------------------------------
 async function executeNotebook(ipynbPath, cwd) {
-  const tmp = join(cwd, '.nbx-tmp', basename(ipynbPath));
-  await mkdir(join(cwd, '.nbx-tmp'), { recursive: true });
+  const tmpDir = join(cwd, '.nbx-tmp');
+  const tmp = join(tmpDir, basename(ipynbPath));
+  await mkdir(tmpDir, { recursive: true });
   await copyFile(ipynbPath, tmp);
-  const out = execFileSync('jupyter', [
-    'nbconvert', '--execute', '--to', 'notebook', '--output', basename(ipynbPath), '--ExecutePreprocessor.timeout=300', tmp
-  ], { cwd, stdio: 'pipe' });
+  // Copy sibling data files into the temp dir so cells that read "data.csv",
+  // "heart.csv", etc. still work regardless of the kernel's working directory.
+  const all = await readdir(cwd).catch(() => []);
+  for (const f of all) {
+    if (/\.(csv|json|txt|xlsx|parquet|tsv)$/i.test(f)) {
+      await copyFile(join(cwd, f), join(tmpDir, f)).catch(() => {});
+    }
+  }
+  const python = process.env.NBX_PYTHON || 'python';
+  execFileSync(python, [
+    '-m', 'nbconvert', '--execute', '--to', 'notebook', '--output', basename(ipynbPath), '--ExecutePreprocessor.timeout=300', tmp
+  ], { cwd: tmpDir, stdio: 'pipe' });
   // nbconvert writes <output> into tmp dir
   const executedPath = join(cwd, '.nbx-tmp', basename(ipynbPath));
   const nb = JSON.parse(await readFile(executedPath, 'utf8'));
@@ -366,6 +376,7 @@ async function loadNotebook(ipynbPath, cwd) {
 // Output -> HTML (richest representation wins)
 // ---------------------------------------------------------------------------
 function renderOutputs(outputs, execCount) {
+  const mime = (m) => Array.isArray(m) ? m.join('') : (m || '');
   let html = '';
   for (const o of outputs || []) {
     const data = o.data || {};
@@ -374,16 +385,16 @@ function renderOutputs(outputs, execCount) {
       continue;
     }
     if (o.output_type === 'stream') {
-      html += `<pre class="stdout">${escapeHtml((o.text || []).join(''))}</pre>`;
+      html += `<pre class="stdout">${escapeHtml(mime(o.text))}</pre>`;
       continue;
     }
     // display_data / execute_result
     if (data['image/png']) {
-      html += `<div class="cell-figure"><img src="data:image/png;base64,${data['image/png'].join('')}" /></div>`;
+      html += `<div class="cell-figure"><img src="data:image/png;base64,${mime(data['image/png'])}" /></div>`;
     } else if (data['text/html']) {
-      html += `<div class="cell-html">${data['text/html'].join('')}</div>`;
+      html += `<div class="cell-html">${mime(data['text/html'])}</div>`;
     } else if (data['text/plain']) {
-      html += `<pre class="stdout">${escapeHtml(data['text/plain'].join(''))}</pre>`;
+      html += `<pre class="stdout">${escapeHtml(mime(data['text/plain']))}</pre>`;
     }
   }
   return html;
