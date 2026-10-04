@@ -231,10 +231,12 @@ function escapeHtml(s) {
 function escapeAttr(s) {
   return escapeHtml(s).replace(/'/g, '&#39;');
 }
-// Inline: **bold** *italic* `code` [text](url) ~~strike~~
+// Inline: **bold** *italic* `code` [text](url) ~~strike~~ $math$
 function renderInline(text) {
   // escape, then apply simple token patterns
   let s = escapeHtml(text);
+  s = s.replace(/\$\$([^$]+)\$\$/g, (_, m) => renderMath(m.trim(), true));
+  s = s.replace(/\$([^$]+)\$/g, (_, m) => renderMath(m.trim(), false));
   s = s.replace(/`([^`]+)`/g, (_, c) => `<code class="inline">${c}</code>`);
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
@@ -276,6 +278,10 @@ function renderMarkdown(src) {
     const t = line.trim();
     if (t === '') { i++; continue; }
     if (t.startsWith('```')) { const [h, ni] = renderCodeBlocks(lines, i); html.push(h); i = ni; continue; }
+    if (/^\$\$/.test(t)) {
+      const match = t.match(/^\$\$([\s\S]*)\$\$$/);
+      if (match) { closeLists(0); html.push(`<div class="math-block">${renderMath(match[1].trim(), true)}</div>`); i++; continue; }
+    }
     if (t.startsWith('|')) { const [h, ni] = renderTable(lines, i); html.push(h); i = ni; continue; }
     if (/^#{1,6}\s/.test(t)) {
       closeLists(0);
@@ -313,6 +319,25 @@ function renderMarkdown(src) {
 }
 
 // ---------------------------------------------------------------------------
+// LaTeX math via KaTeX (Node API, offline, no CDN)
+// ---------------------------------------------------------------------------
+import katex from 'katex';
+
+let _katexCss = null;
+async function initKatex() {
+  if (!_katexCss) {
+    _katexCss = await readFile(resolve(__dirname, 'node_modules/katex/dist/katex.min.css'), 'utf8');
+  }
+  return _katexCss;
+}
+function renderMath(tex, displayMode) {
+  try {
+    return katex.renderToString(tex, { displayMode, throwOnError: false });
+  } catch (e) {
+    return `<span class="math-error">${escapeHtml(tex)}</span>`;
+  }
+}
+
 // Python syntax highlighting via Shiki (Node API, offline, no CDN)
 // ---------------------------------------------------------------------------
 import { createHighlighter } from 'shiki';
@@ -503,6 +528,8 @@ ol.observations li{margin:0.2em 0;text-align:justify}
 ol.observations .observation{list-style:decimal}
 .cell-figure{text-align:center;margin:0.6em 0;page-break-inside:avoid}
 .cell-figure img{max-width:100%;height:auto;display:inline-block}
+.math-block{text-align:center;margin:0.8em 0;overflow-x:auto;page-break-inside:avoid}
+.math-error{color:#a00;font-family:var(--mono);font-size:10pt}
 .cell-html{overflow-x:auto;margin:0.4em 0;page-break-inside:auto}
 .cell-error{font-family:var(--mono);font-size:9pt;color:#a00;background:#fde;border:1px solid #f88;border-left:3px solid #c00;padding:0.6em;border-radius:4px;margin:0.4em 0}
 table.md-table,table.dataframe{border-collapse:collapse;margin:0.6em 0;font-size:9pt;page-break-inside:auto;border:1px solid #333}
@@ -560,8 +587,10 @@ table.md-table *,table.dataframe *{text-align:left !important}
 // ---------------------------------------------------------------------------
 // HTML document builder
 // ---------------------------------------------------------------------------
-function buildHtml(cells, meta, themeName) {
+async function buildHtml(cells, meta, themeName) {
   const css = cssFor(themeName);
+  let katexCss = '';
+  try { katexCss = await initKatex(); } catch (e) { /* katex css unavailable */ }
   const body = [];
   let execCounter = 0;
   let obsOpen = false;
@@ -598,7 +627,7 @@ function buildHtml(cells, meta, themeName) {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>${escapeHtml(title)}</title>
-<style>${css}</style>
+<style>${css}\n${katexCss}</style>
 </head>
 <body>
 ${body.join('\n')}
@@ -762,7 +791,7 @@ async function buildOne(srcPath, opts, producedPdfs) {
 
   // 4. build HTML
   await initHighlighter();
-  const html = buildHtml(execCells, meta, opts.theme);
+  const html = await buildHtml(execCells, meta, opts.theme);
   const htmlPath = join(dir, outBase + '.html');
   await writeFile(htmlPath, html);
   if (opts.html) log.info(`  html -> ${htmlPath}`);
