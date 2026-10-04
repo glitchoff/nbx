@@ -537,6 +537,7 @@ table.md-table th,table.md-table td,table.dataframe th,table.dataframe td{border
 table.md-table thead,table.dataframe thead th{background:#eee;color:#111;font-weight:bold;text-align:left !important}
 table.md-table thead tr,table.dataframe thead tr{background:#eee !important}
 table.dataframe tbody th{background:#fff;color:#111;font-weight:normal;text-align:left !important}
+table.md-table tbody tr:nth-child(even),table.dataframe tbody tr:nth-child(even){background:#f5f5f5}
 table.md-table *,table.dataframe *{text-align:left !important}
 /* cover */
 .cover{text-align:center;padding:4em 1em 2em;page-break-after:always}

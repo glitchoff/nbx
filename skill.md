@@ -11,17 +11,29 @@ formatting rules. You write plain Markdown; `nbx` adds the required styling.
 
 ## The formatting rules this skill encodes
 
-These are the file-preparation rules for a practical submission (current convention):
+These are the **File Preparation Guidelines** for a practical submission:
 
-1. **Times New Roman** throughout.
-2. **Headings** — 14 pt, **bold**; sub-headings (`###`) 13 pt.
-3. **Body text** — 12 pt.
-4. Text is **justified** (like Ctrl+J).
-5. Code and output blocks 10–11 pt; tables 11 pt so results stay readable.
-6. Plain, minimal styling — no cover page, no colours, no page numbers in the footer.
-7. Keep prose brief; most steps are just a numbered heading + code.
-8. Numbered sub-headings (1.1, 1.2, ...) map to the required tasks.
-9. **Observations** is the final section and doubles as the conclusion.
+Each practical should consist of the following sections:
+
+- Major Practical Title
+- Date
+- Practical Title
+- Input/Code
+- Description
+- Output
+- Observations
+
+Notes:
+
+1. The file should be formatted in **Times New Roman** throughout.
+2. Font Size should be **14 for the Heading only**, and the text should be **Bold**.
+3. Font Size should be **12 for the file content**.
+4. The content should be properly **justified** (CTRL+J).
+5. Images should be **labelled with a suitable caption** (identifying the function).
+6. Footer should comprise of **Course Code, Roll number and Page number**.
+7. The **INDEX page should start from an Odd Page Number**.
+8. The **page numbers should start from the INDEX page**.
+9. **Practical 1 should also start from an Odd Page Number.**
 
 `nbx` handles the typography and layout. You write the content.
 
