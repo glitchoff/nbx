@@ -11,33 +11,24 @@ formatting rules. You write plain Markdown; `nbx` adds the required styling.
 
 ## The formatting rules this skill encodes
 
-These are the required file-preparation rules for a practical submission:
+These are the file-preparation rules for a practical submission (current convention):
 
 1. **Times New Roman** throughout.
-2. **Headings** — 14 pt, **bold**.
+2. **Headings** — 14 pt, **bold**; sub-headings (`###`) 13 pt.
 3. **Body text** — 12 pt.
 4. Text is **justified** (like Ctrl+J).
-5. Images/outputs are **captioned** so the function is identifiable.
-6. Footer shows **course code, roll number and page number**.
-7. The **INDEX page starts on an odd page**.
-8. **Page numbering starts from the INDEX page**.
-9. **Practical 1 starts on an odd page.**
-
-Every practical should have these sections:
-
-- Major Practical Title
-- Date
-- Practical Title
-- Input/Code
-- Description
-- Output
-- Observations
+5. Code and output blocks 10–11 pt; tables 11 pt so results stay readable.
+6. Plain, minimal styling — no cover page, no colours, no page numbers in the footer.
+7. Keep prose brief; most steps are just a numbered heading + code.
+8. Numbered sub-headings (1.1, 1.2, ...) map to the required tasks.
+9. **Observations** is the final section and doubles as the conclusion.
 
 `nbx` handles the typography and layout. You write the content.
 
 ## How to write a practical (the .md master)
 
-Separate cells with a line of **three-or-more `=`**. A cell's type is a leading line:
+Separate cells with a line of **three-or-more `=`**. A cell's type is a leading line
+(no `---` marker needed):
 
 ```
 Cell: code       executable Python
@@ -46,36 +37,36 @@ Cell: raw        directives (optional)
 ```
 
 Write **headings, paragraphs, lists, tables and bold/italic with plain Markdown**.
-Headings carry the numbers themselves:
+Headings carry the numbers themselves. Use a clear **heading hierarchy**: `##` for each
+major task (e.g. `## 3.1`) and `###` for each sub-step (e.g. `### 3.1.1`):
 
 ```markdown
 =====
----
 Cell: markdown
 # Practical 1 - Detect Missing Values
 
 **Objective:** detect and handle missing values in a dataset.
 =====
----
 Cell: markdown
 ## 1.1 Check Missing Values
-
-Missing values are detected with `isnull()`.
 =====
----
 Cell: code
 import pandas as pd
 import seaborn as sns
 df = sns.load_dataset('titanic')
 print(df.isnull().sum())
 =====
----
 Cell: markdown
 ## Observations
 
 1. `age` has 177 nulls; `deck` has 688.
 2. Imputation is preferred over dropping rows.
 ```
+
+Keep prose minimal. Most steps need only the heading and the code; add a short
+**one-line** note only where a step genuinely benefits from one, and use brief
+**one-line comments inside code** to explain what the cell does. Save the fuller
+write-up for the Observations section.
 
 ## Optional directives (in raw cells)
 
@@ -98,7 +89,7 @@ For simple practicals, **plain Markdown is enough** — directives are optional.
 ## Recommended structure per practical
 
 ```
-Cover (optional)  ->  Index page  ->  Practical sections (1., 1.1, ...)  ->  Observations
+Practical title (h1)  ->  Task sections (## 3.1, ## 3.2, ...)  ->  Sub-steps (### 3.1.1, ...)  ->  Observations
 ```
 
 Numbered sub-headings (1.1, 1.2, ...) map to the required tasks. Keep Observations as
@@ -146,5 +137,4 @@ Then use `nbx` instead of `npx github:glitchoff/nbx`.
 |---|---|
 | `ModuleNotFoundError` in a cell | Install the package, e.g. `pip install scikit-learn` |
 | Figures are black boxes | Save figures with `facecolor='white'` |
-| Index page numbers missing | Chromium cannot compute cross-reference page numbers |
 | `npx` says no internet / can't fetch | Retry, or clone the repo and run `node nbx.mjs` |
