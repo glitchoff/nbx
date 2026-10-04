@@ -4,7 +4,7 @@ import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import { dirname, resolve, basename, extname, join } from 'path';
 import { readFile, writeFile, mkdir, rm, readdir, copyFile } from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { execFileSync } from 'child_process';
 import { randomBytes } from 'crypto';
 import os from 'os';
@@ -231,10 +231,32 @@ function escapeHtml(s) {
 function escapeAttr(s) {
   return escapeHtml(s).replace(/'/g, '&#39;');
 }
-// Inline: **bold** *italic* `code` [text](url) ~~strike~~ $math$
+// Inline: **bold** *italic* `code` [text](url) ~~strike~~ $math$ ![alt](file.png)
+let _mdBaseDir = null;
+function setMdBaseDir(dir) { _mdBaseDir = dir; }
+function inlineLocalImage(path) {
+  // Resolve a local image path (relative to the .md source) and inline it as base64.
+  try {
+    const full = _mdBaseDir ? resolve(_mdBaseDir, path) : resolve(path);
+    if (!existsSync(full)) return null;
+    const buf = readFileSync(full);
+    const ext = extname(full).toLowerCase().replace('.', '');
+    const mime = ext === 'png' ? 'image/png' : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'gif' ? 'image/gif' : ext === 'svg' ? 'image/svg+xml' : 'application/octet-stream';
+    return `data:${mime};base64,${buf.toString('base64')}`;
+  } catch (e) {
+    return null;
+  }
+}
 function renderInline(text) {
   // escape, then apply simple token patterns
   let s = escapeHtml(text);
+  // local images: ![caption](path) -> inlined <img> with a caption below
+  s = s.replace(/!\[([^\]]*)\]\(([^)]+\.(?:png|jpe?g|gif|svg))\)/g, (_, alt, path) => {
+    const data = inlineLocalImage(path);
+    const imgSrc = data ? data : escapeAttr(path);
+    const cap = alt.trim() ? `<div class="figure-caption">${escapeHtml(alt)}</div>` : '';
+    return `<figure class="md-figure"><img src="${imgSrc}" alt="${escapeAttr(alt)}" class="md-img" />${cap}</figure>`;
+  });
   s = s.replace(/\$\$([^$]+)\$\$/g, (_, m) => renderMath(m.trim(), true));
   s = s.replace(/\$([^$]+)\$/g, (_, m) => renderMath(m.trim(), false));
   s = s.replace(/`([^`]+)`/g, (_, c) => `<code class="inline">${c}</code>`);
@@ -527,6 +549,9 @@ ol.observations li{margin:0.2em 0;text-align:justify}
 ol.observations .observation{list-style:decimal}
 .cell-figure{text-align:center;margin:0.6em 0;page-break-inside:avoid}
 .cell-figure img{max-width:100%;height:auto;display:inline-block}
+.md-img{max-width:100%;height:auto;display:block;margin:0.6em auto;page-break-inside:avoid}
+.md-figure{text-align:center;margin:0.6em 0;page-break-inside:avoid}
+.md-figure .figure-caption{font-size:10.5pt;color:var(--muted);font-style:italic;margin-top:0.3em}
 .math-block{text-align:center;margin:0.8em 0;overflow-x:auto;page-break-inside:avoid}
 .math-error{color:#a00;font-family:var(--mono);font-size:10pt}
 .cell-html{overflow-x:auto;margin:0.4em 0;page-break-inside:auto}
@@ -791,6 +816,7 @@ async function buildOne(srcPath, opts, producedPdfs) {
 
   // 4. build HTML
   await initHighlighter();
+  setMdBaseDir(dir);
   const html = await buildHtml(execCells, meta, opts.theme);
   const htmlPath = join(dir, outBase + '.html');
   await writeFile(htmlPath, html);
@@ -832,7 +858,7 @@ export {
   VERSION, parseArgs, printHelp, log,
   parseMaster, parseDirectives, renderMarkdown, highlight,
   executeNotebook, loadNotebook, renderOutputs, directiveHtml,
-  cssFor, buildHtml, toMarkdown, renderPdf, mergePdfs, cellsToNotebook,
+  cssFor, buildHtml, toMarkdown, renderPdf, mergePdfs, cellsToNotebook, setMdBaseDir,
 };
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
