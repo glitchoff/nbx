@@ -1,0 +1,4 @@
+node_modules/
+.nbx-tmp/
+*.pdf
+.DS_Store

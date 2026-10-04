@@ -1,0 +1,34 @@
+{
+  "name": "nbx",
+  "version": "0.1.0",
+  "description": "Convert .md master-source notebooks to clean .ipynb, .html, .md and PDF reports using a designed directive syntax.",
+  "type": "module",
+  "bin": {
+    "nbx": "nbx.mjs"
+  },
+  "files": [
+    "nbx.mjs",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node nbx.mjs --all",
+    "test": "node nbx.mjs ../../lab1/lab1.md --no-execute"
+  },
+  "keywords": [
+    "jupyter",
+    "notebook",
+    "report",
+    "pdf",
+    "markdown",
+    "cli"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "playwright-core": "^1.48.0",
+    "shiki": "^4.5.0"
+  }
+}
