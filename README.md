@@ -24,15 +24,27 @@ lab1.md  ──►  lab1.ipynb   (clean, executed notebook)
 
 ## Install
 
+**Use it directly from GitHub — no install:**
+
 ```bash
-npm install
-npm link          # makes the `nbx` command available globally
+npx github:glitchoff/nbx lab1.md
 ```
 
-Only two dependencies: `playwright-core` (no browser download — it uses your system
-Chrome/Edge) and `pdf-lib` (for merging).
+Only two dependencies are fetched (`playwright-core`, `pdf-lib`); `npx` handles it.
+
+**Optional: stable local install**
+
+```bash
+git clone https://github.com/glitchoff/nbx.git
+cd nbx
+npm install
+npm link          # exposes the `nbx` command globally; reload your shell
+```
 
 ## Usage
+
+The examples below use `nbx` (after a local install). Without installing, replace
+`nbx` with `npx github:glitchoff/nbx` in any command.
 
 ```bash
 nbx lab1.md                    # → lab1.ipynb, lab1.html, lab1.pdf
