@@ -542,7 +542,7 @@ pre.stdout{font-family:var(--mono);font-size:11pt;background:var(--codebg);paddi
 .out-block{margin:0.4em 0}
 .out-label{font-family:var(--mono);font-size:8pt;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:0.15em;font-weight:bold}
 .out-block .stdout{margin:0}
-pre.codeblock{font-family:var(--mono);font-size:10pt;background:var(--codebg);border:1px solid var(--rule);border-radius:4px;padding:0.9em 1em;position:relative;page-break-inside:avoid;white-space:pre-wrap;overflow-wrap:anywhere}
+pre.codeblock{font-family:var(--mono);font-size:10pt;background:var(--codebg);border:1px solid var(--rule);border-radius:4px;padding:0.9em 1em;position:relative;page-break-inside:auto;white-space:pre-wrap;overflow-wrap:anywhere}
 pre.codeblock code{font-family:inherit;font-size:inherit;line-height:1.45}
 ol.observations{margin:0.5em 0 0.5em 1.4em;padding-left:0}
 ol.observations li{margin:0.2em 0;text-align:justify}
