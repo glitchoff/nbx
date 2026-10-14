@@ -136,8 +136,49 @@ conda activate nbx
 pip install jupyter
 ```
 
+If you already have an existing Conda environment that already contains the
+Python packages you need, point nbx at that Python interpreter using NBX_PYTHON.
+Examples:
+
+```bash
+# find the interpreter path (after activating the env or using `conda run`)
+conda activate myenv
+which python
+# or
+conda run -n myenv which python
+
+# then set NBX_PYTHON to that path and run nbx
+export NBX_PYTHON=/home/user/miniconda3/envs/myenv/bin/python
+nbx lab1.md
+
+# Or run without exporting:
+NBX_PYTHON=/home/user/miniconda3/envs/myenv/bin/python npx github:glitchoff/nbx lab1.md
+```
+
+NBX_PYTHON tells nbx which Python to use for executing notebook cells — useful
+when you want to reuse an existing environment instead of creating a new one.
+
+If your network or corporate firewall blocks automatic browser downloads, you can
+manually provide a Chromium/Chrome executable. Download a Chromium build from the
+upstream GitHub releases (for example: https://github.com/chromium/chromium/releases)
+and point nbx at the browser with NBX_BROWSER. Examples:
+
+```bash
+# Linux/macOS (after downloading/extracting a Chromium build):
+export NBX_BROWSER=/path/to/chrome-or-chromium
+nbx lab1.md
+
+# Windows (PowerShell):
+$env:NBX_BROWSER = 'C:\path\to\chrome.exe'
+npx github:glitchoff/nbx lab1.md
+```
+
+If Playwright is used and cannot download browsers during install, consider
+setting PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 during installation and providing a
+browser via NBX_BROWSER as shown above.
+
 This ensures Jupyter and other Python dependencies are isolated from your system
-Python. Use conda only if it is available on your machine.
+Python when needed. Use Conda or NBX_PYTHON only if they are available on your machine.
 
 ### Optional: install locally instead of `npx`
 
