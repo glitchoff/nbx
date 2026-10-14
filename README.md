@@ -48,7 +48,7 @@ The examples below use `nbx` (after a local install). Without installing, replac
 
 ```bash
 nbx lab1.md                    # → lab1.ipynb, lab1.html, lab1.pdf
-nbx lab1.md --no-pdf --no-ipynb# → html only
+nbx lab1.md --no-pdf --no-ipynb  # → html only
 nbx lab1.md --md               # also write the raw-mode .md render
 nbx .                          # every *.md in the cwd
 nbx lab1 lab2 lab7             # every *.md in those folders, then merge PDFs
@@ -81,88 +81,117 @@ nbx lab1.md --theme modern --margins high --scale 0.9
 
 ## The `.md` master format
 
-A master file is plain Markdown. Cells are separated by a line of **three-or-more
-`=`** characters. Each cell may declare its type with a leading line:
+A master file is plain Markdown. Separate cells with a line of **three-or-more `=`**.
+A cell's type can be set with a leading line (no `---` marker needed):
 
+```text
+Cell: code       executable Python
+Cell: markdown   prose (default if omitted)
+Cell: raw        directives (optional)
 ```
-Cell: raw        # directives live here (see below)
-Cell: code       # executable Python
-Cell: markdown   # prose (default if the marker is omitted)
-```
 
-### Example
+Write **headings, paragraphs, lists, tables, and bold/italic** with plain Markdown.
+Headings carry the numbers themselves. Use a clear **heading hierarchy**: `##` for each
+major task (for example `## 3.1`) and `###` for each sub-step (for example `### 3.1.1`):
 
-````markdown
----
-Cell: raw
-:::
-:::title<DATA SCIENCE PRACTICAL FILE>
-:::subtitle<PRACTICAL 1 — DETECT MISSING VALUES>
-:::date<Date of Conduct :: October 2026>
-:::meta<Course Code :: CS123>
-:::meta<Roll Number :: 21CS001>
-:::
+```markdown
 =====
----
-Cell: raw
-:::index<INDEX>
-=====
----
 Cell: markdown
-## Objective
+# Practical 1 - Detect Missing Values
 
-Detect and handle missing values in the Titanic dataset.
+**Objective:** detect and handle missing values in a dataset.
 =====
----
+Cell: markdown
+## 1.1 Check Missing Values
+=====
 Cell: code
 import pandas as pd
 import seaborn as sns
 df = sns.load_dataset('titanic')
 print(df.isnull().sum())
 =====
----
-Cell: raw
-:::section<1. CHECK MISSING VALUES>
-:::observation<`age` has 177 nulls; `deck` has 688.>
-:::
-````
+Cell: markdown
+## Observations
 
-> The leading `---` line is optional. A bare separator (`=====`) ends a cell.
+1. `age` has 177 nulls; `deck` has 688.
+2. Imputation is preferred over dropping rows.
+```
 
-## Directives
+Keep prose minimal. Most steps need only the heading and the code; add a short
+**one-line** note only where a step genuinely benefits from one, and use brief
+**one-line comments inside code** to explain what the cell does. Save the fuller
+write-up for the Observations section.
 
-Directives are written in **raw cells** using `:::` fences. Two forms:
+## Optional directives (in raw cells)
 
-- **Inline:** `:::note<text>`
-- **Fenced:** opens with `:::name`, body lines follow, closed with `:::`
+`:::name<text>` inline or fenced (`:::name ... :::`):
 
-Both are shown above. Attributes are allowed: `:::question{#q2 .wide}` (currently used
-as an HTML `id`).
-
-| Directive | Renders as |
+| Directive | Purpose |
 |---|---|
-| `:::title<...>` | Cover title |
-| `:::subtitle<...>` | Cover subtitle |
-| `:::date<...>` | Cover date line |
-| `:::meta<Key :: Value>` | Cover metadata row (repeatable) |
-| `:::index<...>` / `:::toc<...>` | Index / table-of-contents page |
-| `:::section<...>` | Section heading (also `h1`–`h6`) |
-| `:::question<...>` | Numbered question card |
-| `:::answer` | Tinted answer block |
-| `:::note<...>` | Blue callout — neutral info |
-| `:::tip<...>` | Green callout — a trick |
-| `:::warning<...>` | Amber callout — a caveat |
-| `:::keypoint<...>` | Highlighted "so what" box |
-| `:::observation<...>` | Observations block |
-| `:::figure<caption>` | Figure caption (place before/after an image) |
-| `:::code<caption>` | Code caption |
-| `:::output<caption>` | Output caption |
-| `:::metric<K1 \| V1 \| K2 \| V2>` | Row of KPI tiles |
-| `:::result<Key :: Value>` | Monospace result line |
-| `:::pagebreak` | Force a page break |
-| `:::oddpage` | Break to the next odd page |
-| `:::evenpage` | Break to the next even page |
-| `:::appendix` | Start the appendix (break before) |
+| `:::title` / `:::subtitle` / `:::date` / `:::meta<K :: V>` | Cover page |
+| `:::index` / `:::toc` | Table of contents (index page) |
+| `:::section` | Section heading |
+| `:::question` / `:::answer` | Q&A blocks |
+| `:::note` / `:::tip` / `:::warning` / `:::keypoint` / `:::observation` | Callouts |
+| `:::figure` | Caption for an image/output |
+| `:::metric<K\|V\|...>` | KPI tiles |
+| `:::result<K :: V>` | Result line |
+| `:::pagebreak` / `:::oddpage` / `:::appendix` | Page flow |
+
+For simple practicals, **plain Markdown is enough** — directives are optional.
+
+## Recommended structure per practical
+
+```text
+Practical title (h1) -> Task sections (## 3.1, ## 3.2, ...) -> Sub-steps (### 3.1.1, ...) -> Observations
+```
+
+Numbered sub-headings (1.1, 1.2, ...) map to the required tasks. Keep Observations as
+the final section — it doubles as the conclusion.
+
+## Workflow
+
+```bash
+npx github:glitchoff/nbx lab1.md      # -> lab1.ipynb + lab1.html + lab1.pdf
+npx github:glitchoff/nbx lab1.md --open   # open the PDF
+```
+
+- No install needed — run it straight from GitHub with `npx`.
+- Edit `lab1.md` in any editor (or GitHub), then re-run the command.
+- Notebooks execute into a temp copy; your source is never mutated.
+- Output in the PDF is genuinely computed, never hardcoded.
+
+## Environment
+
+You only need these on your machine (no `npm install` required by you):
+
+- Node >= 18
+- `jupyter nbconvert` (runs the code cells)
+- Chrome or Edge (the print engine)
+
+That's it. `npx github:glitchoff/nbx` fetches and runs the tool for you. If your browser
+isn't auto-detected, set `NBX_BROWSER` to the full path of a Chrome/Edge executable.
+
+### Optional: install locally instead of `npx`
+
+Prefer a stable local install? Clone the repo and link it once:
+
+```bash
+git clone https://github.com/glitchoff/nbx.git
+cd nbx
+npm install
+npm link          # exposes the `nbx` command; reload your shell after
+```
+
+Then use `nbx` instead of `npx github:glitchoff/nbx`.
+
+## Common problems
+
+| Symptom | Fix |
+|---|---|
+| `ModuleNotFoundError` in a cell | Install the package, e.g. `pip install scikit-learn` |
+| Figures are black boxes | Save figures with `facecolor='white'` |
+| `npx` says no internet / can't fetch | Retry, or clone the repo and run `node nbx.mjs` |
 
 ## Notes
 
