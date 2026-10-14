@@ -1,6 +1,6 @@
 ---
 name: nbx
-description: Author data-science practical files as a single .md master source and render them as submission-ready PDF/HTML/ipynb reports with the required formatting rules (Times New Roman, justified text, numbered headings, observations, page flow).
+description: Author data-science practical files as a single .md master source and render them as submission-ready PDF/HTML/ipynb reports with the required formatting rules (Times New Roman, justified, page numbers).
 ---
 
 # nbx — skill
@@ -127,8 +127,17 @@ You only need these on your machine (no `npm install` required by you):
 - `jupyter nbconvert` (runs the code cells)
 - Chrome or Edge (the print engine)
 
-That's it. `npx github:glitchoff/nbx` fetches and runs the tool for you. If your browser
-isn't auto-detected, set `NBX_BROWSER` to the full path of a Chrome/Edge executable.
+If your Python environment is missing required packages (or you prefer an isolated
+environment) and you have Conda installed, create and use a Conda environment. Example:
+
+```bash
+conda create -n nbx python=3.10 -y
+conda activate nbx
+pip install jupyter
+```
+
+This ensures Jupyter and other Python dependencies are isolated from your system
+Python. Use conda only if it is available on your machine.
 
 ### Optional: install locally instead of `npx`
 
@@ -150,3 +159,17 @@ Then use `nbx` instead of `npx github:glitchoff/nbx`.
 | `ModuleNotFoundError` in a cell | Install the package, e.g. `pip install scikit-learn` |
 | Figures are black boxes | Save figures with `facecolor='white'` |
 | `npx` says no internet / can't fetch | Retry, or clone the repo and run `node nbx.mjs` |
+
+## Notes
+
+- Notebooks are executed into a temp copy (`.nbx-tmp/`) — **your source files are never
+  mutated**.
+- Output is taken from the *richest* representation available: `image/png`,
+  `text/html` (DataFrames render as real tables), then `text/plain`.
+- Because Chromium can't compute cross-reference page numbers, the index lists sections
+  but cannot print per-entry page numbers.
+- The design system lives entirely in `nbx.mjs` (`cssFor`), so themes are just tokens.
+
+## License
+
+MIT
