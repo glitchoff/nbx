@@ -127,15 +127,6 @@ You only need these on your machine (no `npm install` required by you):
 - `jupyter nbconvert` (runs the code cells)
 - Chrome or Edge (the print engine)
 
-If your Python environment is missing required packages (or you prefer an isolated
-environment) and you have Conda installed, create and use a Conda environment. Example:
-
-```bash
-conda create -n nbx python=3.10 -y
-conda activate nbx
-pip install jupyter
-```
-
 If you already have an existing Conda environment that already contains the
 Python packages you need, point nbx at that Python interpreter using NBX_PYTHON.
 Examples:
