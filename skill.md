@@ -1,6 +1,6 @@
 ---
 name: nbx
-description: Author data-science practical files as a single .md master source and render them as submission-ready PDF/HTML/ipynb reports with the required formatting rules (Times New Roman, justified, page numbers).
+description: Author data-science practical files as a single .md master source and render them as submission-ready PDF/HTML/ipynb reports with the required formatting rules (Times New Roman, justified, captioned images).
 ---
 
 # nbx — skill
@@ -30,10 +30,6 @@ Notes:
 3. Font Size should be **12 for the file content**.
 4. The content should be properly **justified** (CTRL+J).
 5. Images should be **labelled with a suitable caption** (identifying the function).
-6. Footer should comprise of **Course Code, Roll number and Page number**.
-7. The **INDEX page should start from an Odd Page Number**.
-8. The **page numbers should start from the INDEX page**.
-9. **Practical 1 should also start from an Odd Page Number.**
 
 `nbx` handles the typography and layout. You write the content.
 
@@ -110,12 +106,16 @@ the final section — it doubles as the conclusion.
 ## Workflow
 
 ```bash
-npx github:glitchoff/nbx lab1.md      # -> lab1.ipynb + lab1.html + lab1.pdf
+npx github:glitchoff/nbx lab1.md          # -> lab1.ipynb + lab1.html + lab1.pdf
+npx github:glitchoff/nbx lab1.ipynb       # -> lab1.html + lab1.pdf (from a notebook)
+npx github:glitchoff/nbx lab1.md --strip-ipynb   # + lab1.strip.ipynb (code + output only)
 npx github:glitchoff/nbx lab1.md --open   # open the PDF
 ```
 
 - No install needed — run it straight from GitHub with `npx`.
 - Edit `lab1.md` in any editor (or GitHub), then re-run the command.
+- Both `.md` masters and existing `.ipynb` notebooks are accepted. An `.ipynb`
+  source is loaded directly and never modified (execution runs on a temp copy).
 - Notebooks execute into a temp copy; your source is never mutated.
 - Output in the PDF is genuinely computed, never hardcoded.
 
@@ -198,8 +198,8 @@ Then use `nbx` instead of `npx github:glitchoff/nbx`.
   mutated**.
 - Output is taken from the *richest* representation available: `image/png`,
   `text/html` (DataFrames render as real tables), then `text/plain`.
-- Because Chromium can't compute cross-reference page numbers, the index lists sections
-  but cannot print per-entry page numbers.
+- `--strip-ipynb` writes `<base>.strip.ipynb` containing only the executable code
+  cells and their outputs (useful for submission), and also the full `<base>.ipynb`.
 - The design system lives entirely in `nbx.mjs` (`cssFor`), so themes are just tokens.
 
 ## License

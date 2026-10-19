@@ -1,18 +1,26 @@
 # nbx
 
-**Convert `.md` master-source notebooks into clean `.ipynb`, `.html`, `.md` and `.pdf` reports.**
+**Convert `.md` master-source notebooks or `.ipynb` notebooks into clean `.ipynb`, `.html`, `.md` and `.pdf` reports.**
 
 `nbx` is a single-file CLI that treats a plain Markdown file as the single source of
 truth for a data-science practical, executes it, and renders it as a designed,
 print-ready report. It replaces the default (ugly) `nbconvert`→PDF pipeline with one
 that produces a real report: cover page, index, headings, callouts, captioned figures,
-page numbers, and proper typography.
+and proper typography.
 
 ```
 lab1.md  ──►  lab1.ipynb   (clean, executed notebook)
         ──►  lab1.html    (standalone designed report)
-        ──►  lab1.pdf     (A4, Times New Roman, page numbers)
-        ──►  lab1.md      (raw-mode re-render, optional)
+          ──►  lab1.pdf     (A4, Times New Roman)
+          ──►  lab1.md      (raw-mode re-render, optional)
+```
+
+An existing `.ipynb` can be rendered directly with the same design — the source
+notebook is never modified (execution runs on a temp copy):
+
+```
+lab1.ipynb ─►  lab1.html    (standalone designed report)
+           ─►  lab1.pdf     (A4, Times New Roman)
 ```
 
 ## Requirements
@@ -50,8 +58,10 @@ The examples below use `nbx` (after a local install). Without installing, replac
 nbx lab1.md                    # → lab1.ipynb, lab1.html, lab1.pdf
 nbx lab1.md --no-pdf --no-ipynb  # → html only
 nbx lab1.md --md               # also write the raw-mode .md render
-nbx .                          # every *.md in the cwd
-nbx lab1 lab2 lab7             # every *.md in those folders, then merge PDFs
+nbx lab1.ipynb                 # render an existing notebook -> html + pdf
+nbx lab1.ipynb --strip-ipynb   # + lab1.strip.ipynb (code cells and outputs only)
+nbx .                          # every *.md / *.ipynb in the cwd
+nbx lab1 lab2 lab7             # every *.md / *.ipynb in those folders, then merge PDFs
 nbx *.md --merge --output report   # merge all into one PDF
 nbx lab1.md --no-execute       # skip execution, use saved outputs
 nbx lab1.md --theme modern --margins high --scale 0.9
@@ -66,6 +76,7 @@ nbx lab1.md --theme modern --margins high --scale 0.9
 | `--html` / `--no-html` | Emit HTML (default: yes) |
 | `--ipynb` / `--no-ipynb` | Emit `.ipynb` (default: yes) |
 | `--md` / `--raw` | Also emit raw-mode `.md` render |
+| `--strip-ipynb` | Also emit `<base>.strip.ipynb` (code + outputs only), plus the full `<base>.ipynb` |
 | `--merge` / `--no-merge` | Merge multi-file PDFs into one |
 | `--output NAME` | Output base name (default: source base) |
 | `--theme NAME` | `academic` (default), `modern`, `plain` |
@@ -199,8 +210,6 @@ Then use `nbx` instead of `npx github:glitchoff/nbx`.
   mutated**.
 - Output is taken from the *richest* representation available: `image/png`,
   `text/html` (DataFrames render as real tables), then `text/plain`.
-- Because Chromium can't compute cross-reference page numbers, the index lists sections
-  but cannot print per-entry page numbers.
 - The design system lives entirely in `nbx.mjs` (`cssFor`), so themes are just tokens.
 
 ## License

@@ -20,7 +20,7 @@ const VERSION = pkg.version;
 function parseArgs(argv) {
   const opts = {
     execute: true, pdf: true, html: true, ipynb: true, md: false,
-    merge: true, open: false, raw: false, quiet: false, keep: false,
+    merge: true, open: false, raw: false, quiet: false, keep: false, stripIpynb: false,
     theme: 'plain', margins: 'normal', scale: 1,
     output: null, cwd: process.cwd(),
   };
@@ -33,6 +33,7 @@ function parseArgs(argv) {
     '--md': ['md', true], '--raw': ['raw', true],
     '--merge': ['merge', true], '--no-merge': ['merge', false],
     '--open': ['open', true], '--keep': ['keep', true], '--quiet': ['quiet', true],
+    '--strip-ipynb': ['stripIpynb', true], '--no-strip-ipynb': ['stripIpynb', false],
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -58,9 +59,13 @@ function printHelp() {
 nbx v${VERSION} — .md master-source notebooks to clean reports
 
 Usage:
-  nbx <file.md> [file2.md ...] [flags]
-  nbx <folder>                # process every *.md in the folder
+  nbx <file.md | file.ipynb> [file2 ...] [flags]
+  nbx <folder>                # process every *.md / *.ipynb in the folder
   nbx --all                   # process every lab*/ in the cwd
+
+Both inputs work: .md masters are parsed into cells, .ipynb notebooks are
+loaded directly. Either way you get .html and .pdf; an .ipynb source is never
+modified (execution runs on a temp copy).
 
 Converts each .md master source into:
   .ipynb  a clean, re-executed Jupyter notebook
@@ -101,6 +106,8 @@ Flags:
   --ipynb / --no-ipynb       emit .ipynb (default: yes)
   --md                       also emit raw-mode .md render
   --raw                      alias for --md
+  --strip-ipynb              also emit <base>.strip.ipynb (code cells + outputs only)
+                             alongside the full <base>.ipynb
   --merge / --no-merge       merge multi-file runs into one PDF
   --output NAME              output base name (default: <source base>)
   --theme NAME               academic | modern | plain
@@ -390,7 +397,9 @@ async function executeNotebook(ipynbPath, cwd) {
   const tmpDir = join(cwd, '.nbx-tmp');
   const tmp = join(tmpDir, basename(ipynbPath));
   await mkdir(tmpDir, { recursive: true });
-  await copyFile(ipynbPath, tmp);
+  // Read/write rather than copyFile so a UTF-8 BOM (common on Windows) is stripped —
+  // nbformat refuses to parse a BOM-prefixed notebook.
+  await writeFile(tmp, (await readFile(ipynbPath, 'utf8')).replace(/^\uFEFF/, ''));
   // Copy sibling data files into the temp dir so cells that read "data.csv",
   // "heart.csv", etc. still work regardless of the kernel's working directory.
   const all = await readdir(cwd).catch(() => []);
@@ -411,7 +420,7 @@ async function executeNotebook(ipynbPath, cwd) {
 
 // Convert an ipynb file to cells in the internal format
 async function loadNotebook(ipynbPath, cwd) {
-  const nb = JSON.parse(await readFile(ipynbPath, 'utf8'));
+  const nb = JSON.parse((await readFile(ipynbPath, 'utf8')).replace(/^\uFEFF/, ''));
   return nb.cells.map((c) => {
     if (c.cell_type === 'markdown') return { type: 'markdown', source: (c.source || []).join('') };
     if (c.cell_type === 'raw') return { type: 'raw', source: (c.source || []).join(''), directives: parseDirectives((c.source || []).join('')) };
@@ -715,9 +724,6 @@ async function renderPdf(html, pdfPath, opts) {
     path: pdfPath, format: 'A4', printBackground: true,
     scale: opts.scale || 1,
     margin: { top: margin, right: margin, bottom: margin, left: margin },
-    displayHeaderFooter: true,
-    footerTemplate: '<span></span>',
-    headerTemplate: '<span></span>',
   });
   await browser.close();
 }
@@ -749,18 +755,18 @@ async function main() {
     const all = await readdir(cwd);
     sources = all.filter((e) => /^lab\d+$/i.test(e)).map((e) => e);
     if (sources.length === 0) {
-      sources = all.filter((e) => e.endsWith('.md'));
+      sources = all.filter((e) => /\.(md|ipynb)$/i.test(e));
     }
   }
-  if (sources.length === 0) { log.err('No .md master files found.'); process.exit(1); }
+  if (sources.length === 0) { log.err('No .md or .ipynb sources found.'); process.exit(1); }
 
   const producedPdfs = [];
   for (const src of sources) {
-    const srcPath = src.includes('/') || src.includes('\\') ? src : resolve(cwd, src);
+    const srcPath = resolve(cwd, src);
     if (!existsSync(srcPath)) { log.warn(`Skipping (not found): ${src}`); continue; }
     const stat = await (async () => { try { return (await import('fs')).statSync(srcPath); } catch { return null; } })();
     if (stat && stat.isDirectory()) {
-      const inner = (await readdir(srcPath)).filter((f) => f.endsWith('.md'));
+      const inner = (await readdir(srcPath)).filter((f) => /\.(md|ipynb)$/i.test(f));
       for (const f of inner) await buildOne(resolve(srcPath, f), opts, producedPdfs);
     } else {
       await buildOne(srcPath, opts, producedPdfs);
@@ -777,11 +783,17 @@ async function buildOne(srcPath, opts, producedPdfs) {
   const base = basename(srcPath, extname(srcPath));
   const outBase = opts.output || base;
   const dir = dirname(srcPath);
+  const fromIpynb = extname(srcPath).toLowerCase() === '.ipynb';
   log.info(`\n▸ ${srcPath}`);
 
-  // 1. parse master
-  const masterSrc = await readFile(srcPath, 'utf8');
-  const cells = parseMaster(masterSrc);
+  // 1. parse master (or load an existing notebook)
+  let cells;
+  if (fromIpynb) {
+    cells = await loadNotebook(srcPath, dir);
+  } else {
+    const masterSrc = await readFile(srcPath, 'utf8');
+    cells = parseMaster(masterSrc);
+  }
 
   // extract meta for title
   const meta = {};
@@ -790,28 +802,51 @@ async function buildOne(srcPath, opts, producedPdfs) {
     if (d.name === 'subtitle' && !meta.subtitle) meta.subtitle = d.inner;
   }
 
-  // 2. build ipynb
-  const nb = cellsToNotebook(cells);
-  const ipynbPath = join(dir, outBase + '.ipynb');
-  await writeFile(ipynbPath, JSON.stringify(nb, null, 1));
-  if (opts.ipynb) log.info(`  ipynb -> ${ipynbPath}`);
+  // 2. build ipynb (for .ipynb input the source notebook is used as-is)
+  const ipynbPath = fromIpynb ? srcPath : join(dir, outBase + '.ipynb');
+  if (!fromIpynb) {
+    const nb = cellsToNotebook(cells);
+    await writeFile(ipynbPath, JSON.stringify(nb, null, 1));
+    if (opts.ipynb) log.info(`  ipynb -> ${ipynbPath}`);
+  }
 
   // 3. execute (into temp copy) to obtain outputs
   let execCells = cells;
+  let executedNb = null;
   if (opts.execute) {
     try {
       const nb = await executeNotebook(ipynbPath, dir);
-      await writeFile(ipynbPath, JSON.stringify(nb, null, 1));
-      log.info(`  executed -> ${ipynbPath}`);
+      executedNb = nb;
+      if (!fromIpynb) {
+        await writeFile(ipynbPath, JSON.stringify(nb, null, 1));
+        log.info(`  executed -> ${ipynbPath}`);
+      } else {
+        log.info('  executed (fresh outputs; source notebook untouched)');
+      }
       execCells = nb.cells.map((c) => {
         if (c.cell_type === 'markdown') return { type: 'markdown', source: (c.source || []).join('') };
         if (c.cell_type === 'raw') return { type: 'raw', source: (c.source || []).join(''), directives: parseDirectives((c.source || []).join('')) };
         return { type: 'code', source: (c.source || []).join(''), outputs: c.outputs || [] };
       });
-      log.info('  executed (fresh outputs)');
+      if (fromIpynb) log.info('  executed (fresh outputs)');
     } catch (e) {
       log.warn('Execution failed; using saved outputs. ' + e.message);
     }
+  }
+
+  // 3b. --strip-ipynb: also emit a code-only notebook, and the full ("good") one
+  if (opts.stripIpynb) {
+    const codeCells = execCells.filter((c) => c.type === 'code');
+    // the complete notebook (prose + code + outputs), unless it is the source itself
+    const fullPath = join(dir, outBase + '.ipynb');
+    if (fromIpynb && resolve(fullPath) !== resolve(srcPath)) {
+      const fullNb = executedNb || cellsToNotebook(execCells);
+      await writeFile(fullPath, JSON.stringify(fullNb, null, 1));
+      log.info(`  ipynb        -> ${fullPath}`);
+    }
+    const stripPath = join(dir, outBase + '.strip.ipynb');
+    await writeFile(stripPath, JSON.stringify(cellsToStrippedNotebook(codeCells), null, 1));
+    log.info(`  strip.ipynb  -> ${stripPath}`);
   }
 
   // 4. build HTML
@@ -854,11 +889,23 @@ function cellsToNotebook(cells) {
   };
 }
 
+// A notebook containing only executable code cells and their outputs.
+function cellsToStrippedNotebook(cells) {
+  const nbCells = cells
+    .filter((c) => c.type === 'code')
+    .map((c, i) => ({ cell_type: 'code', execution_count: i + 1, metadata: {}, outputs: c.outputs || [], source: c.source }));
+  return {
+    nbformat: 4, nbformat_minor: 5,
+    metadata: { kernelspec: { display_name: 'Python 3', language: 'python', name: 'python3' }, language_info: { name: 'python', version: '3.13.14' } },
+    cells: nbCells,
+  };
+}
+
 export {
   VERSION, parseArgs, printHelp, log,
   parseMaster, parseDirectives, renderMarkdown, highlight,
   executeNotebook, loadNotebook, renderOutputs, directiveHtml,
-  cssFor, buildHtml, toMarkdown, renderPdf, mergePdfs, cellsToNotebook, setMdBaseDir,
+  cssFor, buildHtml, toMarkdown, renderPdf, mergePdfs, cellsToNotebook, cellsToStrippedNotebook, setMdBaseDir,
 };
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
