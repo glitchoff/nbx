@@ -567,12 +567,14 @@ ol.observations .observation{list-style:decimal}
 .cell-error{font-family:var(--mono);font-size:9pt;color:#a00;background:#fde;border:1px solid #f88;border-left:3px solid #c00;padding:0.6em;border-radius:4px;margin:0.4em 0}
 table.md-table,table.dataframe{border-collapse:collapse;margin:0.6em 0;font-size:11pt;page-break-inside:auto;border:1px solid #333}
 table.md-table tr,table.dataframe tr{page-break-inside:avoid}
-table.md-table th,table.md-table td,table.dataframe th,table.dataframe td{border:1px solid #555;padding:0.3em 0.7em;text-align:left !important}
-table.md-table thead,table.dataframe thead th{background:#eee;color:#111;font-weight:bold;text-align:left !important}
+table.md-table th,table.md-table td,table.dataframe th,table.dataframe td{border:1px solid #555;padding:0.3em 0.7em;text-align:left}
+table.md-table thead,table.dataframe thead th{background:#eee;color:#111;font-weight:bold;text-align:left}
 table.md-table thead tr,table.dataframe thead tr{background:#eee !important}
-table.dataframe tbody th{background:#fff;color:#111;font-weight:normal;text-align:left !important}
+table.dataframe tbody th{background:#fff;color:#111;font-weight:normal;text-align:left}
 table.md-table tbody tr:nth-child(even),table.dataframe tbody tr:nth-child(even){background:#f5f5f5}
-table.md-table *,table.dataframe *{text-align:left !important}
+/* numeric columns (tagged by the alignment script) line up like a notebook view */
+table.md-table th,table.dataframe th{text-align:center}
+table.md-table td.num,table.md-table th.num,table.dataframe td.num,table.dataframe th.num{text-align:right;font-variant-numeric:tabular-nums}
 /* cover */
 .cover{text-align:center;padding:4em 1em 2em;page-break-after:always}
 .cover-title{font-size:16pt;font-weight:bold;color:var(--accent);margin:2em 0 0.3em}
@@ -665,6 +667,30 @@ async function buildHtml(cells, meta, themeName) {
 </head>
 <body>
 ${body.join('\n')}
+<script>
+// Tag numeric columns so they (and their headers) right-align like a notebook view.
+document.querySelectorAll('table').forEach(function (tb) {
+  var rows = Array.prototype.slice.call(tb.tBodies[0] ? tb.tBodies[0].rows : []);
+  if (!rows.length) return;
+  var cols = rows[0].cells.length;
+  for (var c = 0; c < cols; c++) {
+    var re = new RegExp('^-?[0-9,]+(?:\\.[0-9]+)?$|^-?[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$');
+    var numeric = false, allNum = true;
+    rows.forEach(function (tr) {
+      var td = tr.cells[c];
+      if (!td) { allNum = false; return; }
+      var s = td.textContent.trim();
+      if (s === '') return;
+      if (re.test(s)) numeric = true; else allNum = false;
+    });
+    if (numeric && allNum) {
+      rows.forEach(function (tr) { if (tr.cells[c]) tr.cells[c].classList.add('num'); });
+      var th = tb.tHead && tb.tHead.rows[0] && tb.tHead.rows[0].cells[c];
+      if (th) th.classList.add('num');
+    }
+  }
+});
+</script>
 </body>
 </html>`;
 }
