@@ -8,6 +8,10 @@ print-ready report. It replaces the default (ugly) `nbconvert`→PDF pipeline wi
 that produces a real report: cover page, index, headings, callouts, captioned figures,
 and proper typography.
 
+Paired with `humanizer.md` (adapted from [blader/humanizer](https://github.com/blader/humanizer)),
+a writing skill that strips AI-sounding patterns from prose before the Markdown master
+is authored.
+
 ```
 lab1.md  ──►  lab1.ipynb   (clean, executed notebook)
         ──►  lab1.html    (standalone designed report)

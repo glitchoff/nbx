@@ -8,7 +8,9 @@
   },
   "files": [
     "nbx.mjs",
-    "README.md"
+    "README.md",
+    "skill.md",
+    "humanizer.md"
   ],
   "scripts": {
     "build": "node nbx.mjs --all",

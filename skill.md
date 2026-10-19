@@ -1,6 +1,6 @@
 ---
 name: nbx
-description: Author data-science practical files as a single .md master source and render them as submission-ready PDF/HTML/ipynb reports with the required formatting rules (Times New Roman, justified, captioned images).
+description: Author data-science practical files as a single .md master source and render them as submission-ready PDF/HTML/ipynb reports. Run the Humanizer pass (humanizer.md) on all prose before writing, then apply the required formatting rules (Times New Roman, justified, captioned images).
 ---
 
 # nbx — skill
@@ -8,6 +8,9 @@ description: Author data-science practical files as a single .md master source a
 For **you and your peers**: use `nbx` to author a data-science practical as one readable
 Markdown file and render it into a PDF report that already satisfies the submission
 formatting rules. You write plain Markdown; `nbx` adds the required styling.
+
+**Step zero:** before writing any prose, read and apply `humanizer.md` (the Humanizer
+pass) so your writing reads like a student wrote it, not a chatbot.
 
 ## The formatting rules this skill encodes
 
@@ -43,6 +46,23 @@ Cell: code       executable Python
 Cell: markdown   prose (default if omitted)
 Cell: raw        directives (optional)
 ```
+
+## Before you write — Humanizer pass (required)
+
+Before authoring the `.md` master, apply the **humanizer** skill (`humanizer.md` in
+this repo) to all prose you are about to write: headings, objectives, descriptions,
+notes, and Observations. Write like a student submitting a practical, not like a
+chatbot. The rules that matter most here:
+
+- No "not X, but Y" contrasts, no one-line dramatic closers, no forced triads.
+- No em dashes as connectors; use commas, colons, or parentheses.
+- No inflated claims, sales language, "serves as / features / boasts", or lifted
+  significance ("pivotal", "a testament to", "underscores").
+- No bold-as-decoration, no emoji in headings, no "I hope this helps" wrappers.
+- Keep every factual claim the code and output actually support; make nothing up.
+- Keep prose minimal — most steps need only a heading and the code.
+
+Apply it again as a final check on the Observations section before rendering.
 
 Write **headings, paragraphs, lists, tables and bold/italic with plain Markdown**.
 Headings carry the numbers themselves. Use a clear **heading hierarchy**: `##` for each
