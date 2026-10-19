@@ -65,8 +65,10 @@ chatbot. The rules that matter most here:
 Apply it again as a final check on the Observations section before rendering.
 
 Write **headings, paragraphs, lists, tables and bold/italic with plain Markdown**.
-Headings carry the numbers themselves. Use a clear **heading hierarchy**: `##` for each
-major task (e.g. `## 3.1`) and `###` for each sub-step (e.g. `### 3.1.1`):
+Headings carry the numbers themselves. Keep the heading hierarchy **two levels max**:
+`#` for the practical title and `##` for each major task (e.g. `## 3.1`). Do **not**
+create third-level subgroups (`### 3.1.1`) — flatten sub-steps into the task section
+as plain paragraphs, short bold lead-ins, or ordered list items instead.
 
 ```markdown
 =====
@@ -117,7 +119,7 @@ For simple practicals, **plain Markdown is enough** — directives are optional.
 ## Recommended structure per practical
 
 ```
-Practical title (h1)  ->  Task sections (## 3.1, ## 3.2, ...)  ->  Sub-steps (### 3.1.1, ...)  ->  Observations
+Practical title (h1)  ->  Task sections (## 3.1, ## 3.2, ...)  ->  Observations
 ```
 
 Numbered sub-headings (1.1, 1.2, ...) map to the required tasks. Keep Observations as
